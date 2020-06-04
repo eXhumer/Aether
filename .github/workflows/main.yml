@@ -1,0 +1,54 @@
+name: Library Build Test on Ubuntu 20.04 (master branch)
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build:
+    runs-on: ubuntu-20.04
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Update system to latest
+      run: |
+        echo -n Updating system...
+        sudo apt update && sudo apt -y upgrade >/dev/null
+        echo Done!
+
+    - name: Download & install dkp-pacman
+      run: |
+        echo -n Downloading dkp-pacman...
+        wget https://github.com/devkitPro/pacman/releases/download/devkitpro-pacman-1.0.1/devkitpro-pacman.deb --quiet
+        echo Done!
+        echo -n Installing dkp-pacman...
+        sudo dpkg -i devkitpro-pacman.deb >/dev/null
+        echo Done!
+  
+    - name: Update packages to latest from dkp-pacman
+      run: |
+        echo -n Downloading DKP pacman...
+        sudo dkp-pacman --sync 
+        echo Done!
+        echo -n Installing DKP pacman...
+        sudo dpkg -i devkitpro-pacman.deb >/dev/null
+        echo Done!
+
+    - name: Update packages from dkp-pacman to latest
+      run: |
+        echo -n Updating dkp-pacman packages...
+        sudo dkp-pacman --sync --refresh --sysupgrade --noconfirm --noprogressbar
+        echo Done!
+
+    - name: Install packages required for build from dkp-pacman
+      run: |
+        echo -n Installing packages...
+        sudo dkp-pacman --sync --noconfirm --noprogressbar switch-dev switch-portlibs switch-sdl2 switch-sdl2_gfx switch-sdl2_image switch-sdl2_ttf >/dev/null
+        echo Done!
+
+    - name: Make library
+      run: |
+        make --directory=$GITHUB_WORKSPACE --file=$GITHUB_WORKSPACE/Makefile library
